@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+const STATUSES = ["Placed", "Packed", "Out for delivery", "Delivered", "Cancelled"];
+
 const orderSchema = new mongoose.Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
@@ -15,9 +17,10 @@ const orderSchema = new mongoose.Schema(
     ],
     address: { type: String, required: true },
     total: { type: Number, required: true },
-    status: { type: String, default: "Placed" },
+    status: { type: String, enum: STATUSES, default: "Placed" },
   },
   { timestamps: true }
 );
 
 module.exports = mongoose.model("Order", orderSchema);
+module.exports.STATUSES = STATUSES;

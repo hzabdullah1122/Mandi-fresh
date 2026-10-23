@@ -7,6 +7,7 @@ const messageSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     topic: { type: String, default: "General" },
     message: { type: String, required: true, maxlength: 2000 },
+    read: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -65,7 +65,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider
-      value={{ user, token, ready, login, register, logout, cart, addToCart, setQty, clearCart, cartCount, cartTotal }}
+      value={{ user, setUser, token, ready, login, register, logout, cart, addToCart, setQty, clearCart, cartCount, cartTotal }}
     >
       {children}
     </AppContext.Provider>

@@ -5,17 +5,27 @@ import { money } from "@/lib/format";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useApp();
+  const soldOut = product.inStock === false;
 
   return (
     <article className="flex flex-col">
-      <div className="aspect-square overflow-hidden rounded-md bg-sand">
+      <div className="relative aspect-square overflow-hidden rounded-md bg-sand">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={product.image}
+          src={product.image || "/images/placeholder.svg"}
           alt={product.name}
           loading="lazy"
-          className="h-full w-full object-cover transition duration-500 hover:scale-105"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "/images/placeholder.svg";
+          }}
+          className={`h-full w-full object-cover transition duration-500 hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
         />
+        {soldOut && (
+          <span className="absolute left-2 top-2 rounded bg-ink px-2 py-1 text-xs font-medium text-white">
+            Out of stock
+          </span>
+        )}
       </div>
       <p className="mt-3 text-xs uppercase tracking-wider text-ink/50">{product.category}</p>
       <h3 className="text-lg leading-snug">{product.name}</h3>
@@ -24,9 +34,10 @@ export default function ProductCard({ product }) {
         <span className="font-medium">{money(product.price)}</span>
         <button
           onClick={() => addToCart(product)}
-          className="rounded-md border border-leaf px-3 py-1.5 text-sm font-medium text-leaf transition hover:bg-leaf hover:text-white"
+          disabled={soldOut}
+          className="rounded-md border border-leaf px-3 py-1.5 text-sm font-medium text-leaf transition hover:bg-leaf hover:text-white disabled:cursor-not-allowed disabled:border-ink/20 disabled:text-ink/40 disabled:hover:bg-transparent disabled:hover:text-ink/40"
         >
-          Add to cart
+          {soldOut ? "Unavailable" : "Add to cart"}
         </button>
       </div>
     </article>

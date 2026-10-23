@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import Accordion from "@/components/Accordion";
+import Select from "@/components/Select";
 
 const topics = ["Order status", "Missing or damaged item", "Product request", "Delivery area", "Something else"];
 
@@ -119,11 +120,12 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium">What is it about?</label>
-                  <select className="input" value={form.topic} onChange={set("topic")}>
-                    {topics.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
+                  <Select
+                    value={form.topic}
+                    onChange={(v) => setForm({ ...form, topic: v })}
+                    options={topics}
+                    ariaLabel="What is it about?"
+                  />
                 </div>
               </div>
               <div>

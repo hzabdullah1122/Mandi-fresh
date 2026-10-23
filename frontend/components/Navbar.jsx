@@ -67,12 +67,20 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <div className="hidden items-center gap-5 md:flex">
+          <div className="hidden items-center gap-4 md:flex lg:gap-5">
             {user ? (
               <>
-                <span className={`text-sm 2xl:text-base ${transparent ? "text-white/90" : "text-ink/70"}`}>
+                {user.role === "admin" && (
+                  <Link href="/admin" className={linkClass("/admin")}>
+                    Admin
+                  </Link>
+                )}
+                <Link href="/orders" className={linkClass("/orders")}>
+                  Orders
+                </Link>
+                <Link href="/account" className={linkClass("/account")}>
                   {user.name.split(" ")[0]}
-                </span>
+                </Link>
                 <button onClick={logout} className={linkClass("")}>
                   Log out
                 </button>
@@ -112,7 +120,12 @@ export default function Navbar() {
               Cart ({cartCount})
             </Link>
             {user ? (
-              <button onClick={logout} className="block text-sm">Log out</button>
+              <>
+                {user.role === "admin" && <Link href="/admin" className="block text-sm">Admin</Link>}
+                <Link href="/orders" className="block text-sm">My orders</Link>
+                <Link href="/account" className="block text-sm">My account ({user.name.split(" ")[0]})</Link>
+                <button onClick={logout} className="block text-sm">Log out</button>
+              </>
             ) : (
               <>
                 <Link href="/login" className="block text-sm">Log in</Link>
