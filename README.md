@@ -1,6 +1,6 @@
 # Mandi Fresh
 
-An online grocery store for Lahore. Next.js (JSX) + Tailwind CSS on the frontend, Node.js + Express on the backend.
+An online grocery store for Lahore. Next.js (JSX) + Tailwind CSS on the frontend, Node.js + Express + MongoDB (Mongoose) on the backend.
 
 ## Features
 
@@ -19,13 +19,13 @@ frontend/   Next.js app (app router, Tailwind)
 
 ## Getting started
 
-You need Node.js 18 or newer. Run the backend and the frontend in two separate terminals.
+You need Node.js 18 or newer and a MongoDB database (a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster works). Run the backend and the frontend in two separate terminals.
 
 ### 1. Backend
 
 ```bash
 cd backend
-cp .env.example .env     # then set a real JWT_SECRET
+cp .env.example .env     # then set JWT_SECRET and MONGODB_URI
 npm install
 npm run dev              # http://localhost:5000
 ```
@@ -54,7 +54,7 @@ Open http://localhost:3000. Create an account from the Sign up page to place an 
 | GET    | `/api/orders`        | yes  | Your orders                      |
 | POST   | `/api/contact`       | no   | Send a contact message           |
 
-Users, orders and messages are stored in `backend/data/db.json` (created automatically, not committed). Swap this for a real database such as MongoDB before going to production.
+Users, orders and contact messages are stored in MongoDB. The product catalogue lives in `backend/data/products.js`.
 
 ## Credits
 
