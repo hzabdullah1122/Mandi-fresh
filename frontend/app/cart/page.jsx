@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { api } from "@/lib/api";
+import { api, imageSrc } from "@/lib/api";
 import { money } from "@/lib/format";
 
 export default function CartPage() {
@@ -77,7 +77,7 @@ export default function CartPage() {
           {cart.map(({ product, qty }) => (
             <li key={product.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 py-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={product.image} alt="" className="h-16 w-16 rounded-md object-cover sm:h-20 sm:w-20" />
+              <img src={imageSrc(product.image)} alt="" className="h-16 w-16 rounded-md object-cover sm:h-20 sm:w-20" />
               <div className="min-w-0 flex-1 basis-40">
                 <p className="font-serif text-lg">{product.name}</p>
                 <p className="text-sm text-ink/60">

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { api } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 
 function PasswordInput({ label, value, onChange, minLength, autoComplete }) {
   const [show, setShow] = useState(false);
@@ -52,6 +53,7 @@ function Note({ ok, bad }) {
 
 export default function AccountPage() {
   const { user, token, ready, setUser, logout } = useApp();
+  const toast = useToast();
   const router = useRouter();
   const [name, setName] = useState("");
   const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
@@ -78,7 +80,8 @@ export default function AccountPage() {
     try {
       const d = await api("/auth/me", { method: "PUT", token, body: { name } });
       setUser(d.user);
-      say("profile", "Saved.");
+      say("profile");
+      toast.success("Your name has been updated");
     } catch (x) {
       say("profile", "", x.message);
     }
@@ -89,7 +92,8 @@ export default function AccountPage() {
     try {
       await api("/auth/me", { method: "PUT", token, body: pw });
       setPw({ currentPassword: "", newPassword: "" });
-      say("password", "Your password has been changed.");
+      say("password");
+      toast.success("Your password has been changed");
     } catch (x) {
       say("password", "", x.message);
     }
@@ -97,11 +101,19 @@ export default function AccountPage() {
 
   const deleteAccount = async (e) => {
     e.preventDefault();
-    if (!window.confirm("Delete your account for good? This cannot be undone.")) return;
+    const ok = await toast.confirm({
+      title: "Delete your account?",
+      message: "This removes your login for good and cannot be undone.",
+      confirmText: "Delete account",
+      cancelText: "Keep it",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api("/auth/me", { method: "DELETE", token, body: { password: delPw } });
       logout();
       router.push("/");
+      toast.success("Your account has been deleted");
     } catch (x) {
       say("danger", "", x.message);
     }

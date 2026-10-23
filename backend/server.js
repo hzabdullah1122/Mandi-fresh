@@ -12,6 +12,8 @@ const User = require("./models/User");
 const Product = require("./models/Product");
 const Order = require("./models/Order");
 const Message = require("./models/Message");
+const Image = require("./models/Image");
+const { sendReply } = require("./lib/mailer");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -175,6 +177,12 @@ const publicProduct = (p) => ({
   inStock: p.inStock,
 });
 
+// Uploaded photos live at /api/images/<id>. Delete the stored file once no product uses it.
+async function dropImage(url) {
+  const m = /^\/api\/images\/([a-f0-9]{24})$/.exec(url || "");
+  if (m && !(await Product.exists({ image: url }))) await Image.findByIdAndDelete(m[1]);
+}
+
 function readProductBody(body) {
   const name = String(body.name || "").trim();
   const category = String(body.category || "").trim();
@@ -183,7 +191,8 @@ function readProductBody(body) {
   if (!name || !category || !unit) return { error: "Name, category and unit are required" };
   if (!Number.isFinite(price) || price < 0) return { error: "Price must be a number, 0 or more" };
   const image = String(body.image || "").trim();
-  if (image && !/^(https?:\/\/|\/)/.test(image))
+  if (!image) return { error: "Add a photo or an image link" };
+  if (!/^(https?:\/\/|\/)/.test(image))
     return { error: "Image must be a web address (https://...) or a path starting with /" };
   return {
     data: {
@@ -237,8 +246,10 @@ app.put(
   wrap(async (req, res) => {
     const { data, error } = readProductBody(req.body);
     if (error) return res.status(400).json({ message: error });
+    const before = await Product.findOne({ id: Number(req.params.id) });
+    if (!before) return res.status(404).json({ message: "Product not found" });
     const product = await Product.findOneAndUpdate({ id: Number(req.params.id) }, data, { new: true });
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (before.image !== data.image) await dropImage(before.image);
     res.json(publicProduct(product));
   })
 );
@@ -249,7 +260,39 @@ app.delete(
   wrap(async (req, res) => {
     const product = await Product.findOneAndDelete({ id: Number(req.params.id) });
     if (!product) return res.status(404).json({ message: "Product not found" });
+    await dropImage(product.image);
     res.json({ message: "Product deleted" });
+  })
+);
+
+// ---- Product photos ----
+// The browser sends the resized photo as raw bytes (Content-Type: image/jpeg, png or webp).
+const looksLikeImage = (b, type) =>
+  (type === "image/jpeg" && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) ||
+  (type === "image/png" && b.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))) ||
+  (type === "image/webp" && b.slice(0, 4).toString() === "RIFF" && b.slice(8, 12).toString() === "WEBP");
+
+app.post(
+  "/api/admin/images",
+  admin,
+  express.raw({ type: ["image/jpeg", "image/png", "image/webp"], limit: "3mb" }),
+  wrap(async (req, res) => {
+    const type = (req.headers["content-type"] || "").split(";")[0];
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0 || !looksLikeImage(req.body, type))
+      return res.status(400).json({ message: "Please upload a JPG, PNG or WebP photo" });
+    const img = await Image.create({ contentType: type, data: req.body });
+    res.status(201).json({ url: `/api/images/${img.id}` });
+  })
+);
+
+app.get(
+  "/api/images/:id",
+  wrap(async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).end();
+    const img = await Image.findById(req.params.id);
+    if (!img) return res.status(404).end();
+    res.set({ "Content-Type": img.contentType, "Cache-Control": "public, max-age=31536000, immutable" });
+    res.send(img.data);
   })
 );
 
@@ -376,6 +419,7 @@ const publicMessage = (m) => ({
   topic: m.topic,
   message: m.message,
   read: m.read,
+  reply: m.reply?.text ? { subject: m.reply.subject, text: m.reply.text, sentAt: m.reply.sentAt } : null,
   createdAt: m.createdAt,
 });
 
@@ -394,6 +438,35 @@ app.patch(
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Message not found" });
     const m = await Message.findByIdAndUpdate(req.params.id, { read: !!req.body.read }, { new: true });
     if (!m) return res.status(404).json({ message: "Message not found" });
+    res.json(publicMessage(m));
+  })
+);
+
+// Answer a customer by email, straight from the admin panel
+app.post(
+  "/api/admin/messages/:id/reply",
+  admin,
+  wrap(async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Message not found" });
+    const m = await Message.findById(req.params.id);
+    if (!m) return res.status(404).json({ message: "Message not found" });
+
+    const text = String(req.body.text || "").trim();
+    const subject = String(req.body.subject || "").trim() || `Re: ${m.topic}`;
+    if (!text) return res.status(400).json({ message: "Write a reply first" });
+    if (text.length > 5000) return res.status(400).json({ message: "Reply is too long (max 5000 characters)" });
+
+    try {
+      await sendReply({ to: m.email, subject, text, quote: m.message });
+    } catch (err) {
+      console.error("Mail error:", err.message);
+      if (err.status === 503) return res.status(503).json({ message: err.message });
+      return res.status(502).json({ message: "The email could not be sent. Please try again in a moment." });
+    }
+
+    m.reply = { subject, text, sentAt: new Date() };
+    m.read = true;
+    await m.save();
     res.json(publicMessage(m));
   })
 );

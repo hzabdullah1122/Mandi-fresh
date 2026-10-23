@@ -5,8 +5,10 @@ import { api } from "@/lib/api";
 import { money, formatDate } from "@/lib/format";
 import StatusBadge, { STATUSES } from "@/components/StatusBadge";
 import Select from "@/components/Select";
+import { useToast } from "@/components/Toast";
 
 export default function OrdersAdmin({ token }) {
+  const toast = useToast();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("All");
@@ -19,12 +21,12 @@ export default function OrdersAdmin({ token }) {
   useEffect(load, [load]);
 
   const setStatus = async (id, status) => {
-    setError("");
     try {
       await api(`/admin/orders/${id}`, { method: "PATCH", token, body: { status } });
+      toast.success(`${id} is now "${status}"`);
       load();
     } catch (e) {
-      setError(e.message);
+      toast.error(e.message);
     }
   };
 

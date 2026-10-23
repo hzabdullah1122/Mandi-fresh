@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Fraunces, DM_Sans } from "next/font/google";
 import { AppProvider } from "@/context/AppContext";
+import { ToastProvider } from "@/components/Toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -17,9 +18,11 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${serif.variable} ${sans.variable}`}>
       <body>
         <AppProvider>
-          <Navbar />
-          <main className="min-h-[70vh]">{children}</main>
-          <Footer />
+          <ToastProvider>
+            <Navbar />
+            <main className="min-h-[70vh]">{children}</main>
+            <Footer />
+          </ToastProvider>
         </AppProvider>
       </body>
     </html>

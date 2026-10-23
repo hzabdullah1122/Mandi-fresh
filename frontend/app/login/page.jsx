@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import AuthShell from "@/components/AuthShell";
+import { useToast } from "@/components/Toast";
 
 export default function LoginPage() {
   const { login } = useApp();
+  const toast = useToast();
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -19,6 +21,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login(form);
+      toast.success("Welcome back!");
       router.push("/products");
     } catch (err) {
       setError(err.message);

@@ -8,6 +8,12 @@ const messageSchema = new mongoose.Schema(
     topic: { type: String, default: "General" },
     message: { type: String, required: true, maxlength: 2000 },
     read: { type: Boolean, default: false },
+    // Filled in when an admin answers from the panel
+    reply: {
+      subject: String,
+      text: String,
+      sentAt: Date,
+    },
   },
   { timestamps: true }
 );

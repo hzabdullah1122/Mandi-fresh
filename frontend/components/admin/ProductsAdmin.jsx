@@ -4,11 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { money } from "@/lib/format";
 import ComboBox from "@/components/ComboBox";
+import ImagePicker from "@/components/admin/ImagePicker";
+import { imageSrc } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 
 const CATEGORIES = ["Fruits", "Vegetables", "Dairy", "Bakery", "Meat", "Beverages", "Pantry"];
 const blank = { name: "", category: "Fruits", price: "", unit: "", image: "", description: "", inStock: true };
 
 export default function ProductsAdmin({ token }) {
+  const toast = useToast();
   const [products, setProducts] = useState(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {id,...} = existing
@@ -38,12 +42,14 @@ export default function ProductsAdmin({ token }) {
 
   const save = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setFormError("");
+    if (!form.image.trim()) return setFormError("Add a photo or an image link before saving.");
+    setSaving(true);
     try {
       const body = { ...form, price: Number(form.price) };
       if (editing.id) await api(`/products/${editing.id}`, { method: "PUT", token, body });
       else await api("/products", { method: "POST", token, body });
+      toast.success(editing.id ? "Product updated" : "Product added");
       setEditing(null);
       load();
     } catch (err) {
@@ -54,21 +60,29 @@ export default function ProductsAdmin({ token }) {
   };
 
   const remove = async (p) => {
-    if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    const ok = await toast.confirm({
+      title: "Delete this product?",
+      message: `"${p.name}" will be removed from the shop. This can't be undone.`,
+      confirmText: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api(`/products/${p.id}`, { method: "DELETE", token });
+      toast.success("Product deleted");
       load();
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
   const toggleStock = async (p) => {
     try {
       await api(`/products/${p.id}`, { method: "PUT", token, body: { ...p, inStock: !p.inStock } });
+      toast.success(p.inStock ? `${p.name} marked out of stock` : `${p.name} is back in stock`);
       load();
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -109,7 +123,7 @@ export default function ProductsAdmin({ token }) {
                     <div className="flex items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={p.image || "/images/placeholder.svg"}
+                        src={imageSrc(p.image) || "/images/placeholder.svg"}
                         alt=""
                         onError={(e) => {
                           e.currentTarget.onerror = null;
@@ -184,17 +198,7 @@ export default function ProductsAdmin({ token }) {
               <label className="mb-1 block text-sm font-medium">Price (Rs.)</label>
               <input className="input" type="number" min="0" step="1" required value={form.price} onChange={set("price")} />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Image link <span className="font-normal text-ink/50">(optional)</span>
-              </label>
-              <input
-                className="input"
-                placeholder="https://..."
-                value={form.image}
-                onChange={set("image")}
-              />
-            </div>
+            <ImagePicker value={form.image} onChange={(v) => setForm({ ...form, image: v })} token={token} />
             <div>
               <label className="mb-1 block text-sm font-medium">Description</label>
               <textarea className="input" rows={3} value={form.description} onChange={set("description")} />

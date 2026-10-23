@@ -6,8 +6,10 @@ import { useApp } from "@/context/AppContext";
 import { api } from "@/lib/api";
 import { money, formatDate } from "@/lib/format";
 import StatusBadge from "@/components/StatusBadge";
+import { useToast } from "@/components/Toast";
 
 export default function OrdersPage() {
+  const toast = useToast();
   const { user, token, ready } = useApp();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
@@ -23,13 +25,20 @@ export default function OrdersPage() {
   }, [token, load]);
 
   const cancel = async (id) => {
-    if (!window.confirm("Cancel this order?")) return;
-    setError("");
+    const ok = await toast.confirm({
+      title: "Cancel this order?",
+      message: `${id} will be cancelled. You can place a new order any time.`,
+      confirmText: "Cancel order",
+      cancelText: "Keep order",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api(`/orders/${id}/cancel`, { method: "PATCH", token });
+      toast.success("Your order has been cancelled");
       load();
     } catch (e) {
-      setError(e.message);
+      toast.error(e.message);
     }
   };
 

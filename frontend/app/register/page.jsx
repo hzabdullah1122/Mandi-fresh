@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import AuthShell from "@/components/AuthShell";
+import { useToast } from "@/components/Toast";
 
 export default function RegisterPage() {
   const { register } = useApp();
+  const toast = useToast();
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
@@ -19,6 +21,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await register(form);
+      toast.success("Your account is ready. Welcome to Mandi Fresh!");
       router.push("/products");
     } catch (err) {
       setError(err.message);
