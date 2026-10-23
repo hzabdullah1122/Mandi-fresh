@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-cream font-sans text-ink antialiased;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-serif;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md bg-leaf px-5 py-2.5 text-sm font-medium text-white transition hover:bg-leaf-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-md border border-ink/30 px-5 py-2.5 text-sm font-medium transition hover:border-ink;
+  }
+  .input {
+    @apply w-full rounded-md border border-ink/20 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-leaf;
+  }
+  /* Page width grows with the screen: 1152px -> 1280px -> 1600px at 2xl */
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 xl:max-w-7xl 2xl:max-w-[1600px] 2xl:px-12;
+  }
+  /* Same gutters, but the max width is set per page (cart message, about, contact) */
+  .page-narrow {
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+  }
+}
